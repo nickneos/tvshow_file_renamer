@@ -103,10 +103,10 @@ def log_to_csv(orig_file, renamed_file, csv_file="history.csv"):
 
     if not os.path.exists(csv_file):
         with open(csv_file, "w") as f:
-            f.write("ts, folder, original_filename, new_filename\n")
+            f.write("ts| folder| original_filename| new_filename\n")
 
     with open(csv_file, "a") as f:
-        f.write(f"{ts}, {Path(orig_file).parent}, {Path(orig_file).name}, {Path(renamed_file).name}\n")
+        f.write(f"{ts}| {Path(orig_file).parent}| {Path(orig_file).name}| {Path(renamed_file).name}\n")
 
 
 def rename_tvshows(folder, test_run=False):
