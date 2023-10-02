@@ -1,6 +1,6 @@
 .vscode
-history.csv
-rename_files.json
+*.csv
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
