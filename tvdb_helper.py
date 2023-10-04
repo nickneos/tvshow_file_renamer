@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from urllib.parse import quote
 from pathlib import Path
 
@@ -58,6 +59,19 @@ def get_show_id(search_string, type="series", **kwargs):
     Returns:
         id: TVDB ID
     """
+    # first try getting from cache
+    for file in os.listdir("cache/"):
+        if file.endswith(".json"):
+            with open("cache/" + file, "r") as f:
+                data = json.load(f)["data"]
+            if data["name"].lower() == search_string.strip().lower():
+                return (
+                    data["id"],
+                    data["name"],
+                    data["year"],
+                )
+
+    # use api when not found in cache
     q = quote(search_string)
     endpoint = f"/search?query={q}&type={type}"
 
@@ -66,10 +80,13 @@ def get_show_id(search_string, type="series", **kwargs):
     response = tvdb_request(URL + endpoint)
 
     try:
-        id = response["data"][0]["tvdb_id"]
+        return (
+            response["data"][0]["tvdb_id"],
+            response["data"][0]["name"],
+            response["data"][0]["year"],
+        )
     except (KeyError, IndexError):
         return None
-    return id
 
 
 def get_episodes(series_id):
@@ -89,6 +106,17 @@ def get_episodes(series_id):
     return episodes
 
 
+def get_episode_details(series_id, season_num, episode_num):
+    json_data = get_episodes(series_id)
+
+    for episode in json_data["data"]["episodes"]:
+        if episode["seasonNumber"] == season_num:
+            if episode["number"] == episode_num:
+                return (episode["aired"], episode["name"], episode["overview"])
+
+
 if __name__ == "__main__":
-    id = get_show_id("The Sopranos")
-    json_data = get_episodes(id)
+    print(get_show_id("Alias"))
+    # # json_data = get_episodes(id)
+    # x = get_episode_details(75299, 1, 3)
+    # print(x)
