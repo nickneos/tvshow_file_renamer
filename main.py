@@ -67,8 +67,8 @@ def rename_generator(folder, tags_only=False, multimode=False):
 
         # generate new file name
         if tags_only:
-            new_filename = re.sub(
-                pattern, f"S{s:02}E{e:02}", fn, count=1, flags=re.IGNORECASE
+            new_filename = (
+                f"{show_name} ({year}) - S{s:02}E{e:02}{ext}"
             )
             # remove repeating episode tags
             # eg. when original file was like "1x01 & 1x02"
@@ -80,7 +80,8 @@ def rename_generator(folder, tags_only=False, multimode=False):
             new_filename = (
                 f"{show_name} ({year}) - S{s:02}E{e:02} - {episode_name}{ext}"
             )
-            new_filename = os.path.join(Path(fn).parent, new_filename)
+        
+        new_filename = os.path.join(Path(fn).parent, new_filename)
 
         # skip over if no change in filename
         if fn.lower() == new_filename.lower():

@@ -92,7 +92,7 @@ def get_show_id(search_string, type="series", **kwargs):
             response["data"][0]["name"],
             response["data"][0]["year"],
         )
-    except (KeyError, IndexError):
+    except (KeyError, IndexError, TypeError):
         return None
 
 
