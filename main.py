@@ -1,16 +1,18 @@
 import os
 import re
-import sys
 import csv
 import tvdb_helper
+import argparse
 from datetime import datetime
 from pathlib import Path
 
-PATTERN = r"s?(\d{1,2})\s?[ex]\s?(\d{1,2})(\s?\-?\s?[ex]?(\d{1,2}))?"
+
+PATTERN = r"s(\d{1,2})(?:\s|\-)?[ex]\s?(\d{1,2})"
+PATTERN_MULTI = r"s(\d{1,2})(?:\s|\-)?[ex]\s?(\d{1,2})(\s?\-?\s?[ex]?(\d{1,2}))?"
 VIDEO_EXTS = [".avi", ".mp4", ".mkv"]
 
 
-def rename_tvshows(folder, test_run=False, tags_only=True):
+def rename_tvshows(folder, test_run=False, tags_only=True, multimode=False):
     """
     Loops through `folder` and renames any video files
     with "S01E01" naming convention.
@@ -18,7 +20,7 @@ def rename_tvshows(folder, test_run=False, tags_only=True):
     If `test_run` is set `True`, this will only log
     to console. Rename operations are not run
     """
-    rename_info = rename_generator(folder)
+    rename_info = rename_generator(folder, tags_only, multimode)
 
     # loop through each file to be renamed
     for i, file in enumerate(rename_info):
@@ -37,20 +39,22 @@ def rename_tvshows(folder, test_run=False, tags_only=True):
             log_to_csv(file_from, file_to, "test_runs.csv")
 
 
-def rename_generator(folder, tags_only=False):
+def rename_generator(folder, tags_only=False, multimode=False):
     rename_info = []
 
     # get all episodes in folder recursively
-    episodes_data = episode_list_with_metadata(folder)
+    episodes_data = episode_list_with_metadata(folder, multimode=multimode)
 
     for ep in episodes_data:
         s = ep.get("season")
         e = ep.get("episode")
         fn = ep.get("file")
+        ext = Path(fn).suffix
         show_name = ep.get("tvshow_name")
         year = ep.get("year")
         episode_name = ep.get("episode_name")
         aired = ep.get("aired")
+        pattern = PATTERN_MULTI if multimode else PATTERN
 
         if not s:
             continue
@@ -58,21 +62,24 @@ def rename_generator(folder, tags_only=False):
             continue
 
         # handle multi episodes
-        if type(e) is list:
+        if multimode and type(e) is list:
             e = f"{min(e):02}-E{max(e):02}"
 
         # generate new file name
         if tags_only:
             new_filename = re.sub(
-                PATTERN, f"S{s:02}E{e:02}", fn, count=1, flags=re.IGNORECASE
+                pattern, f"S{s:02}E{e:02}", fn, count=1, flags=re.IGNORECASE
             )
             # remove repeating episode tags
             # eg. when original file was like "1x01 & 1x02"
-            new_filename = re.sub(
-                r"\s?\&\s?" + PATTERN, "", new_filename, flags=re.IGNORECASE
-            )
+            if multimode:
+                new_filename = re.sub(
+                    r"\s?\&\s?" + pattern, "", new_filename, flags=re.IGNORECASE
+                )
         else:
-            new_filename = f"{show_name} ({year}) - S{s:02}E{e:02} - {episode_name}"
+            new_filename = (
+                f"{show_name} ({year}) - S{s:02}E{e:02} - {episode_name}{ext}"
+            )
             new_filename = os.path.join(Path(fn).parent, new_filename)
 
         # skip over if no change in filename
@@ -84,7 +91,7 @@ def rename_generator(folder, tags_only=False):
     return rename_info
 
 
-def episode_list_with_metadata(folder, include_tvdb_info=True):
+def episode_list_with_metadata(folder, include_tvdb_info=True, multimode=False):
     """
     Return list of dictionaries for each episode nested
     under `folder`.
@@ -105,7 +112,7 @@ def episode_list_with_metadata(folder, include_tvdb_info=True):
             full_file_path = os.path.join(root, fn)
 
             # build tv info to dictionary
-            season, episode = extract_s_e_from_filename(fn)
+            season, episode = extract_s_e_from_filename(fn, multimode)
 
             if season is None or episode is None:
                 continue
@@ -141,14 +148,16 @@ def episode_list_with_metadata(folder, include_tvdb_info=True):
                     ep_info.append(tvdb_helper.get_episode_details(show_id, season, ep))
 
                 # add info to dict
-                if len(ep_info) == 1:
-                    dict["aired"] = ep_info[0][0]
-                    dict["episode_name"] = ep_info[0][1]
-                    dict["overview"] = ep_info[0][2]
-                else:
-                    dict["aired"] = [x[0] for x in ep_info]
-                    dict["episode_name"] = [x[1] for x in ep_info]
-                    dict["overview"] = [x[2] for x in ep_info]
+                ep_info = [x for x in ep_info if x is not None]
+                if len(ep_info) > 0:
+                    if len(ep_info) == 1:
+                        dict["aired"] = ep_info[0][0]
+                        dict["episode_name"] = ep_info[0][1]
+                        dict["overview"] = ep_info[0][2]
+                    else:
+                        dict["aired"] = [x[0] for x in ep_info if x]
+                        dict["episode_name"] = [x[1] for x in ep_info if x]
+                        dict["overview"] = [x[2] for x in ep_info if x]
 
             # add to list
             tvshow_dicts.append(dict)
@@ -159,17 +168,21 @@ def episode_list_with_metadata(folder, include_tvdb_info=True):
     return tvshow_dicts
 
 
-def extract_s_e_from_filename(file):
+def extract_s_e_from_filename(file, multimode):
     """Returns season number and episode number for given video `file`"""
-    match = re.findall(PATTERN, file, re.IGNORECASE)
+    pattern = PATTERN_MULTI if multimode else PATTERN
+    match = re.findall(pattern, file, re.IGNORECASE)
 
     if len(match) <= 0:
         return None, None
+    
     elif len(match) == 1:
         s = int(match[0][0])
         # this is for multi episode files
         # eg. "S01E01-03"
-        if match[0][3] == "":
+        if not multimode:
+            e = int(match[0][1])  
+        elif match[0][3] == "":
             e = int(match[0][1])
         else:
             e = [int(match[0][1]), int(match[0][3])]
@@ -248,18 +261,19 @@ def all_equal(list):
     return all(x == list[0] for x in list)
 
 
-if __name__ == "__main__":
-    try:
-        # look through cli arguments
-        for i, arg in enumerate(sys.argv):
-            # option -f, --folder
-            # calls rename_tvshows()
-            if arg in ["-f", "--folder"]:
-                test_run = False
-                for arg in sys.argv:
-                    if arg in ["-t", "--test-run"]:
-                        test_run = True
-                rename_tvshows(sys.argv[i + 1], test_run=test_run)
+def parse_args():
+    # cli arguments
+    parser = argparse.ArgumentParser(description="Renames TV Shows")
+    parser.add_argument("directory", help="full path of TV show directory")
+    parser.add_argument(
+        "-t", "--tagsonly", action="store_true", help="rename using tags only"
+    )
+    parser.add_argument("-m", "--multimode", action="store_true", help="folder contains multi-episodes")
+    parser.add_argument("-d", "--debugmode", action="store_true", help="for debugging")
 
-    except IndexError:
-        print("I'll document usage later")
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    rename_tvshows(args.directory, args.debugmode, args.tagsonly, args.multimode)

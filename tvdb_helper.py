@@ -23,9 +23,13 @@ def generate_token(api_key=API_KEY):
 
 
 def read_token_from_file(json_file="token.json"):
-    with open(json_file) as f:
-        j = json.load(f)
-    return j["data"]["token"]
+    try:
+        with open(json_file) as f:
+            j = json.load(f)
+        return j["data"]["token"]
+    except FileNotFoundError:
+        generate_token(API_KEY)
+        read_token_from_file()
 
 
 def tvdb_request(api_url, retries=1):
@@ -60,6 +64,9 @@ def get_show_id(search_string, type="series", **kwargs):
         id: TVDB ID
     """
     # first try getting from cache
+    if not Path("cache/").exists():
+        os.mkdir("cache/")
+
     for file in os.listdir("cache/"):
         if file.endswith(".json"):
             with open("cache/" + file, "r") as f:
@@ -116,7 +123,8 @@ def get_episode_details(series_id, season_num, episode_num):
 
 
 if __name__ == "__main__":
-    print(get_show_id("Alias"))
+    # print(get_show_id("Alias"))
     # # json_data = get_episodes(id)
     # x = get_episode_details(75299, 1, 3)
     # print(x)
+    generate_token(api_key=API_KEY)
