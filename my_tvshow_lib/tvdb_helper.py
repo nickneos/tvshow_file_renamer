@@ -6,6 +6,7 @@ from pathlib import Path
 
 URL = "https://api4.thetvdb.com/v4"
 API_KEY = "19f970d5-e640-4401-82c2-2cc42d125b0f"
+CACHE = "../cache/"
 
 
 def generate_token(api_key=API_KEY):
@@ -64,12 +65,12 @@ def get_show_id(search_string, type="series", **kwargs):
         id: TVDB ID
     """
     # first try getting from cache
-    if not Path("cache/").exists():
-        os.mkdir("cache/")
+    if not Path(CACHE).exists():
+        os.mkdir(CACHE)
 
-    for file in os.listdir("cache/"):
+    for file in os.listdir(CACHE):
         if file.endswith(".json"):
-            with open("cache/" + file, "r") as f:
+            with open(CACHE + file, "r") as f:
                 data = json.load(f)["data"]
             if data["name"].lower() == search_string.strip().lower():
                 return (
