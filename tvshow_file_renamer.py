@@ -90,10 +90,26 @@ def log_to_csv(orig_file, renamed_file, csv_file="history.csv"):
 
 def parse_args():
     # cli arguments
-    parser = argparse.ArgumentParser(description="Renames TV Shows")
-    parser.add_argument("directory", help="full path of TV show directory")
-    parser.add_argument("-f", "--filename_format", default=DEFAULT_RENAME_FORMAT)
-    parser.add_argument("-d", "--debugmode", action="store_true", help="for debugging")
+    parser = argparse.ArgumentParser(
+        description="Renames TV Show media files using information from thetvdb.com"
+    )
+    parser.add_argument(
+        "directory",
+        help="Full path of TV show directory. Assumes all files under this directory relate to one tv show",
+    )
+    parser.add_argument(
+        "-f",
+        "--filename_format",
+        default=DEFAULT_RENAME_FORMAT,
+        metavar="format-string",
+        help='Example: "{show_name} ({show_year}) S{season_no}E{episode_no} {episode_name}{ext}"',
+    )
+    parser.add_argument(
+        "-d",
+        "--debugmode",
+        action="store_true",
+        help="Enables debug mode. In debug mode, renamed filenames are printed to screen but are not actually renamed on the disk",
+    )
 
     return parser.parse_args()
 
@@ -101,4 +117,3 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     rename_tvshows(args.directory, args.filename_format, args.debugmode)
-
