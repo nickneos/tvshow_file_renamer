@@ -5,11 +5,16 @@ from urllib.parse import quote
 from pathlib import Path
 
 URL = "https://api4.thetvdb.com/v4"
-API_KEY = "19f970d5-e640-4401-82c2-2cc42d125b0f"
-CACHE = "../cache/"
+HOME_DIR = Path(__file__).resolve(strict=True).parents[1]
+API_FILE = os.path.join(HOME_DIR, "api_key.txt")
+TOKEN_JSON = os.path.join(HOME_DIR, "token.json")
+CACHE = os.path.join(HOME_DIR, "cache/")
 
 
-def generate_token(api_key=API_KEY):
+def generate_token(api_key_file=API_FILE):
+    with open(api_key_file, mode="r") as f:
+        api_key = f.read().strip()
+
     endpoint = "/login"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {"apikey": api_key}
@@ -17,19 +22,19 @@ def generate_token(api_key=API_KEY):
     response = requests.post(URL + endpoint, headers=headers, json=data)
 
     if response.status_code == 200:
-        with open("token.json", "w") as f:
+        with open(TOKEN_JSON, "w") as f:
             json.dump(response.json(), f, indent=2)
         return True
     return False
 
 
-def read_token_from_file(json_file="token.json"):
+def read_token_from_file(json_file=TOKEN_JSON):
     try:
         with open(json_file) as f:
             j = json.load(f)
         return j["data"]["token"]
     except FileNotFoundError:
-        generate_token(API_KEY)
+        generate_token()
         read_token_from_file()
 
 
@@ -97,35 +102,34 @@ def get_show_id(search_string, type="series", **kwargs):
         return None
 
 
-def get_episodes(series_id):
+def get_series_data(series_id):
     # first try retreving from cache
     # TODO: if active show, query api if cached file is older than a week
-    if Path(f"cache/{series_id}.json").exists():
-        with open(f"cache/{series_id}.json", "r") as f:
-            episodes = json.load(f)
+    if Path(os.path.join(CACHE,f"{series_id}.json")).exists():
+        with open(os.path.join(CACHE,f"{series_id}.json"), "r") as f:
+            data = json.load(f)
     # otherwise query api
     else:
         endpoint = f"/series/{series_id}/episodes/default/eng?page=0"
-        episodes = tvdb_request(URL + endpoint)
+        data = tvdb_request(URL + endpoint)
         # save to cache
-        with open(f"cache/{series_id}.json", "w") as f:
-            json.dump(episodes, f, indent=2)
+        with open(os.path.join(CACHE,f"{series_id}.json"), "w") as f:
+            json.dump(data, f, indent=2)
 
-    return episodes
+    return data
 
 
 def get_episode_details(series_id, season_num, episode_num):
-    json_data = get_episodes(series_id)
+    json_data = get_series_data(series_id)
 
     for episode in json_data["data"]["episodes"]:
         if episode["seasonNumber"] == season_num:
             if episode["number"] == episode_num:
-                return (episode["aired"], episode["name"], episode["overview"])
+                return episode
 
 
-if __name__ == "__main__":
-    # print(get_show_id("Alias"))
-    # # json_data = get_episodes(id)
-    # x = get_episode_details(75299, 1, 3)
-    # print(x)
-    generate_token(api_key=API_KEY)
+def get_series_details(series_id):
+    return get_series_data(series_id)["data"]
+
+
+read_token_from_file()
