@@ -18,5 +18,5 @@ python tvshow_file_renamer.py [-h] [-f format-string] [-d] directory
 | Options                                   |                                                                                                                                               |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`                            | show this help message and exit                                                                                                               |
-| `-f`, `--filename_format` `format-string` | The filename format to rename the files to. eg: `--filename_format "{show_name} ({show_year}) S{season_no}E{episode_no} {episode_name}{ext}"` |
-| `-d`, `--debugmode`                       | Enables debug mode. In debug mode, renamed filenames are printed to screen but are not actually renamed on the disk                           |
+| `-f`, `--filename-format` `format-string` | The filename format to rename the files to. eg: `--filename-format "{show_name} ({show_year}) S{season_no}E{episode_no} {episode_name}{ext}"` |
+| `-t`, `--test-mode`                       | Enables test mode. In test mode, renamed filenames are printed to screen but are not actually renamed on the disk                             |

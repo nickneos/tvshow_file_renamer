@@ -109,7 +109,7 @@ def parse_args():
         "-t",
         "--test-mode",
         action="store_true",
-        help="Enables debug mode. In debug mode, renamed filenames are printed to screen but are not actually renamed on the disk",
+        help="Enables test mode. In test mode, renamed filenames are printed to screen but are not actually renamed on the disk",
     )
 
     return parser.parse_args()
