@@ -55,7 +55,7 @@ def tvdb_request(api_url, retries=1):
     return None
 
 
-def get_show_id(search_string, type="series", **kwargs):
+def find_series(search_string, type="series", **kwargs):
     """
     Returns the TVDB ID for a query.
 
@@ -69,22 +69,6 @@ def get_show_id(search_string, type="series", **kwargs):
     Returns:
         id: TVDB ID
     """
-    # first try getting from cache
-    if not Path(CACHE).exists():
-        os.mkdir(CACHE)
-
-    for file in os.listdir(CACHE):
-        if file.endswith(".json"):
-            with open(CACHE + file, "r") as f:
-                data = json.load(f)["data"]
-            if data["name"].lower() == search_string.strip().lower():
-                return (
-                    data["id"],
-                    data["name"],
-                    data["year"],
-                )
-
-    # use api when not found in cache
     q = quote(search_string)
     endpoint = f"/search?query={q}&type={type}"
 
@@ -93,27 +77,23 @@ def get_show_id(search_string, type="series", **kwargs):
     response = tvdb_request(URL + endpoint)
 
     try:
-        return (
-            response["data"][0]["tvdb_id"],
-            response["data"][0]["name"],
-            response["data"][0]["year"],
-        )
+        data = response["data"][0]
+        return data
     except (KeyError, IndexError, TypeError):
         return None
 
 
 def get_series_data(series_id):
-    # first try retreving from cache
     # TODO: if active show, query api if cached file is older than a week
-    if Path(os.path.join(CACHE,f"{series_id}.json")).exists():
-        with open(os.path.join(CACHE,f"{series_id}.json"), "r") as f:
+    if Path(os.path.join(CACHE, f"{series_id}.json")).exists():
+        with open(os.path.join(CACHE, f"{series_id}.json"), "r") as f:
             data = json.load(f)
     # otherwise query api
     else:
         endpoint = f"/series/{series_id}/episodes/default/eng?page=0"
         data = tvdb_request(URL + endpoint)
         # save to cache
-        with open(os.path.join(CACHE,f"{series_id}.json"), "w") as f:
+        with open(os.path.join(CACHE, f"{series_id}.json"), "w") as f:
             json.dump(data, f, indent=2)
 
     return data
@@ -133,3 +113,11 @@ def get_series_details(series_id):
 
 
 read_token_from_file()
+
+if not Path(CACHE).exists():
+    os.mkdir(CACHE)
+
+
+if __name__ == "__main__":
+    j = find_series("mr robot", kwargs={"year": 2015})
+    print(json.dumps(j, indent=2))

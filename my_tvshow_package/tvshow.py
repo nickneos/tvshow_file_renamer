@@ -24,17 +24,16 @@ class TVShow:
 
     def _determine_tvshow(self):
         tvshow_name = Path(self.folder).parts[-1]
+        kwargs = {}
 
         if _m := re.search(r"[\(\[]((19|20)\d{2})[\)\]]", tvshow_name):
             tvshow_name = tvshow_name.replace(_m.group(0), "").strip()
-            year = int(_m.group(1))
-            self.id, self.name, self.year = tvdb_helper.get_show_id(
-                tvshow_name, year=year
-            )
-        else:
-            self.id, self.name, self.year = tvdb_helper.get_show_id(tvshow_name)
-
-        return self.id
+            kwargs["year"] = int(_m.group(1))
+            
+        data = tvdb_helper.find_series(tvshow_name, kwargs=kwargs)
+        self.id = data.get("tvdb_id")
+        self.name = data.get("name")
+        self.year = data.get("year")
 
     def get_episodes(self):
         self.episodes = []

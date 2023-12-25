@@ -10,18 +10,18 @@ DEFAULT_RENAME_FORMAT = (
 )
 
 
-def rename_tvshows(folder, format, test_run=False):
+def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
     """
-    Loops through `folder` and renames any video files
-    with "S01E01" naming convention.
+    Loops through `tvshow_folder` and renames the video files
+    according to `format`
 
-    If `test_run` is set `True`, this will only log
-    to console. Rename operations are not run
+    If `test_run` is set `True`, this will only log to console. 
+    Rename operations are not run
     """
-    tv_show = TVShow(folder)
+    tv_show = TVShow(tvshow_folder)
     tv_show.get_episodes()
 
-    # loop through each file to be renamed
+    # loop through each episode video file to be renamed
     for episode in tv_show.episodes:
         # get details
         new_filename = rename_episode_file(episode, format)
@@ -40,7 +40,8 @@ def rename_episode_file(episode: Episode, format: str):
     """
     Renames the `episode` filename to the new `format` string
     """
-    # handle multi ep numbers
+    # handle multi episode numbers
+    # eg. S01E01E02
     if type(episode.episode) is list:
         ep = "E".join([f"{e:02}" for e in episode.episode])
     else:
@@ -99,14 +100,14 @@ def parse_args():
     )
     parser.add_argument(
         "-f",
-        "--filename_format",
+        "--filename-format",
         default=DEFAULT_RENAME_FORMAT,
         metavar="format-string",
         help='Example: "{show_name} ({show_year}) S{season_no}E{episode_no} {episode_name}{ext}"',
     )
     parser.add_argument(
-        "-d",
-        "--debugmode",
+        "-t",
+        "--test-mode",
         action="store_true",
         help="Enables debug mode. In debug mode, renamed filenames are printed to screen but are not actually renamed on the disk",
     )
@@ -116,4 +117,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    rename_tvshows(args.directory, args.filename_format, args.debugmode)
+    rename_tvshow_episodes(args.directory, args.filename_format, args.test_mode)
