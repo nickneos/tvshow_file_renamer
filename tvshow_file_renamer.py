@@ -15,7 +15,7 @@ def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
     Loops through `tvshow_folder` and renames the video files
     according to `format`
 
-    If `test_run` is set `True`, this will only log to console. 
+    If `test_run` is set `True`, this will only log to console.
     Rename operations are not run
     """
     tv_show = TVShow(tvshow_folder)
@@ -28,22 +28,23 @@ def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
         testing_tag = "[TEST ONLY] " if test_run else ""
 
         # skip over if no new filename generated
-        if not new_filename:            
+        if not new_filename:
             print(f'{testing_tag}Skipping "{episode.path}"')
             continue
 
         # rename tv show file
         print(f'{testing_tag}Renaming "{episode.path}" --> "{new_filename}"')
         if not test_run:
+            os.makedirs(os.path.dirname(new_filename), exist_ok=True)
             os.rename(episode.path, new_filename)
             log_to_csv(episode.path, new_filename)
         else:
             log_to_csv(episode.path, new_filename, "test_runs.csv")
 
 
-def rename_episode_file(episode: Episode, format: str):
+def rename_episode_file(episode: Episode, fmt: str):
     """
-    Renames the `episode` filename to the new `format` string
+    Renames the `episode` filename to the new `fmt` string
     """
     # handle multi episode numbers
     # eg. S01E01E02
@@ -62,8 +63,12 @@ def rename_episode_file(episode: Episode, format: str):
         return None
 
     # construct new filename
-    new_filename = (
-        format.replace("{show_name}", episode.show_name)
+    new_filename = episode.top_level_folder.replace(
+        Path(episode.top_level_folder).parts[-1],
+        f"{episode.show_name} ({episode.show_year})/Season {episode.season}/",
+    )
+    new_filename = new_filename + (
+        fmt.replace("{show_name}", episode.show_name)
         .replace("{show_year}", episode.show_year)
         .replace("{season_no}", f"{episode.season:02}")
         .replace("{episode_no}", ep)
@@ -71,7 +76,7 @@ def rename_episode_file(episode: Episode, format: str):
         .replace("{ext}", Path(episode.path).suffix)
     )
 
-    return os.path.join(Path(episode.path).parent, new_filename)
+    return new_filename
 
 
 def log_to_csv(orig_file, renamed_file, csv_file="history.csv"):

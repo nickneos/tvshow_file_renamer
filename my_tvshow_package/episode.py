@@ -7,9 +7,10 @@ PATTERN = r"(?:s|season)\s?(\d{1,2})(?:e|episode|x)(\d{1,2})(?:(?:e|episode|x|\-
 
 
 class Episode:
-    def __init__(self, path, show_id) -> None:
+    def __init__(self, path, show_id, top_level_folder) -> None:
         self.path = path
         self.show_id = show_id
+        self.top_level_folder = top_level_folder
         # self.show_name =
         # self.show_year =
         self.filename = Path(path).name

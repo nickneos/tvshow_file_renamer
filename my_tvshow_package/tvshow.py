@@ -41,5 +41,5 @@ class TVShow:
             for fn in files:
                 if not helpers.is_video_file(fn):
                     continue
-                episode = Episode(os.path.join(root, fn), self.id)
+                episode = Episode(os.path.join(root, fn), self.id, self.folder)
                 self.episodes.append(episode)
