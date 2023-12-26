@@ -6,7 +6,7 @@ from pathlib import Path
 from my_tvshow_package import TVShow, Episode
 
 DEFAULT_RENAME_FORMAT = (
-    "{show_name} ({show_year}) S{season_no}E{episode_no} {episode_name}{ext}"
+    "{show_name} ({show_year}) - S{season_no}E{episode_no} - {episode_name}{ext}"
 )
 
 
@@ -27,11 +27,16 @@ def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
         new_filename = rename_episode_file(episode, format)
         testing_tag = "[TEST ONLY] " if test_run else ""
 
+        # skip over if no new filename generated
+        if not new_filename:            
+            print(f'{testing_tag}Skipping "{episode.path}"')
+            continue
+
         # rename tv show file
         print(f'{testing_tag}Renaming "{episode.path}" --> "{new_filename}"')
         if not test_run:
             os.rename(episode.path, new_filename)
-            log_to_csv(episode.path, new_filename, "test_runs.csv")
+            log_to_csv(episode.path, new_filename)
         else:
             log_to_csv(episode.path, new_filename, "test_runs.csv")
 
@@ -42,16 +47,19 @@ def rename_episode_file(episode: Episode, format: str):
     """
     # handle multi episode numbers
     # eg. S01E01E02
-    if type(episode.episode) is list:
-        ep = "E".join([f"{e:02}" for e in episode.episode])
-    else:
-        ep = f"{episode.episode:02}"
+    try:
+        if type(episode.episode) is list:
+            ep = "E".join([f"{e:02}" for e in episode.episode])
+        else:
+            ep = f"{episode.episode:02}"
 
-    # handle multi ep titles
-    if type(episode.name) is list:
-        ep_title = "~~".join(episode.name)
-    else:
-        ep_title = episode.name if episode.name else ""
+        # handle multi ep titles
+        if type(episode.name) is list:
+            ep_title = "~~".join(episode.name)
+        else:
+            ep_title = episode.name if episode.name else ""
+    except TypeError:
+        return None
 
     # construct new filename
     new_filename = (
