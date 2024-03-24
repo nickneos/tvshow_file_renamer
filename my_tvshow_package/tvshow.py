@@ -24,6 +24,8 @@ class TVShow:
 
     def _determine_tvshow(self):
         tvshow_name = Path(self.folder).parts[-1]
+        if tvshow_name.lower().startswith("season"):
+            tvshow_name = Path(self.folder).parts[-2]
         kwargs = {}
 
         if _m := re.search(r"[\(\[]((19|20)\d{2})[\)\]]", tvshow_name):
@@ -37,9 +39,12 @@ class TVShow:
 
     def get_episodes(self):
         self.episodes = []
-        for root, dirs, files in os.walk(self.folder):
-            for fn in files:
-                if not helpers.is_video_file(fn):
-                    continue
-                episode = Episode(os.path.join(root, fn), self.id, self.folder)
-                self.episodes.append(episode)
+        
+        for f in Path(self.folder).rglob("*.*"):
+            # for fn in files:
+            if not helpers.is_video_file(f.name):
+                continue
+            if Path(self.folder).parts[-1].lower().startswith("season"):
+                top_level_folder = Path(self.folder).parent.as_posix()
+            episode = Episode(f.as_posix(), self.id, top_level_folder)
+            self.episodes.append(episode)
