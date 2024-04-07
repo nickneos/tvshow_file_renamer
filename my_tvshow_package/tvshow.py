@@ -46,5 +46,7 @@ class TVShow:
                 continue
             if Path(self.folder).parts[-1].lower().startswith("season"):
                 top_level_folder = Path(self.folder).parent.as_posix()
+            else:
+                top_level_folder = self.folder
             episode = Episode(f.as_posix(), self.id, top_level_folder)
             self.episodes.append(episode)

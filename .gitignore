@@ -2,6 +2,7 @@ api_key.txt
 .vscode
 *.csv
 *.json
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

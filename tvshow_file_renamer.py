@@ -6,7 +6,7 @@ from pathlib import Path
 from my_tvshow_package import TVShow, Episode
 
 DEFAULT_RENAME_FORMAT = (
-    "{show_name} ({show_year}) - S{season_no}E{episode_no} - {episode_name}{ext}"
+    "S{season_no}E{episode_no} - {episode_name}{ext}"
 )
 
 
