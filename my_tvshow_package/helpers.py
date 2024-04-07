@@ -1,5 +1,6 @@
 VIDEO_EXTS = [".avi", ".mp4", ".mkv"]
 
+
 def is_video_file(file):
     """Checks if `file` is a video file"""
     for ext in VIDEO_EXTS:

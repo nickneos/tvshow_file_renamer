@@ -1,9 +1,11 @@
-import os
 import re
 import json
 from pathlib import Path
-from my_tvshow_package import helpers, tvdb_helper
-from my_tvshow_package import Episode
+
+# my modules
+from .helpers import is_video_file
+from .tvdb_helper import find_series
+from .episode import Episode
 
 
 class TVShow:
@@ -24,7 +26,8 @@ class TVShow:
 
     def _determine_tvshow(self):
         tvshow_name = Path(self.folder).parts[-1]
-        if tvshow_name.lower().startswith("season"):
+        if tvshow_name.lower().startswith("season") \
+        or tvshow_name.lower().startswith("series"):
             tvshow_name = Path(self.folder).parts[-2]
         kwargs = {}
 
@@ -32,7 +35,7 @@ class TVShow:
             tvshow_name = tvshow_name.replace(_m.group(0), "").strip()
             kwargs["year"] = int(_m.group(1))
             
-        data = tvdb_helper.find_series(tvshow_name, kwargs=kwargs)
+        data = find_series(tvshow_name, kwargs=kwargs)
         self.id = data.get("tvdb_id")
         self.name = data.get("name")
         self.year = data.get("year")
@@ -42,9 +45,10 @@ class TVShow:
         
         for f in Path(self.folder).rglob("*.*"):
             # for fn in files:
-            if not helpers.is_video_file(f.name):
+            if not is_video_file(f.name):
                 continue
-            if Path(self.folder).parts[-1].lower().startswith("season"):
+            if Path(self.folder).parts[-1].lower().startswith("season") \
+            or Path(self.folder).parts[-1].lower().startswith("series"):
                 top_level_folder = Path(self.folder).parent.as_posix()
             else:
                 top_level_folder = self.folder

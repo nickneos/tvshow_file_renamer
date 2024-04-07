@@ -3,7 +3,10 @@ import csv
 import argparse
 from datetime import datetime
 from pathlib import Path
-from my_tvshow_package import TVShow, Episode
+
+# custom modules
+from my_tvshow_package.tvshow import TVShow
+from my_tvshow_package.episode import Episode
 
 DEFAULT_RENAME_FORMAT = (
     "S{season_no}E{episode_no} - {episode_name}{ext}"

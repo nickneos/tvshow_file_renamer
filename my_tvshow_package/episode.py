@@ -1,7 +1,10 @@
 import re
 import json
 from pathlib import Path
-from my_tvshow_package import tvdb_helper, helpers
+
+# my modules
+from .tvdb_helper import get_episode_details, get_series_details
+from .helpers import delist_if_needed
 
 PATTERN = r"(?:s|season)\s?(\d{1,2})(?:e|episode|x)(\d{1,2})(?:(?:e|episode|x|\-)(\d{1,2}))?(?:(?:e|episode|x|\-)(\d{1,2}))?"
 
@@ -24,7 +27,7 @@ class Episode:
 
     def _get_tvdb_info(self):
         # get series info
-        series_info = tvdb_helper.get_series_details(self.show_id)
+        series_info = get_series_details(self.show_id)
         self.show_name = series_info["name"]
         self.show_year = series_info["year"]
 
@@ -43,14 +46,14 @@ class Episode:
             self.season = int(match[0][0])
             # this is for multi episode files
             # eg. "S01E01E02"
-            self.episode = helpers.delist_if_needed(
+            self.episode = delist_if_needed(
                 [int(ep) for ep in match[0][1:] if ep.strip() != ""]
             )
         else:
             # also for multi episode files but with season repeater
             # eg. "S01E01 & S01E02 and S01E03"
-            self.season = helpers.delist_if_needed([int(x[0]) for x in match])
-            self.episode = helpers.delist_if_needed([int(x[1]) for x in match])
+            self.season = delist_if_needed([int(x[0]) for x in match])
+            self.episode = delist_if_needed([int(x[1]) for x in match])
 
             # shouldn't have multi seasons in one file
             if type(self.season) is list:
@@ -64,12 +67,12 @@ class Episode:
         overview = []
         # loop through list of episode numbers and get info for each episode
         for ep in episode:
-            ep_info = tvdb_helper.get_episode_details(self.show_id, self.season, ep)
+            ep_info = get_episode_details(self.show_id, self.season, ep)
             if ep_info:
                 aired.append(ep_info["aired"])
                 name.append(ep_info["name"])
                 overview.append(ep_info["overview"])
 
-        self.aired = helpers.delist_if_needed(aired)
-        self.name = helpers.delist_if_needed(name)
-        self.overview = helpers.delist_if_needed(overview)
+        self.aired = delist_if_needed(aired)
+        self.name = delist_if_needed(name)
+        self.overview = delist_if_needed(overview)
