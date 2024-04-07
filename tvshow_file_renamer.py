@@ -1,6 +1,8 @@
 import os
 import csv
 import argparse
+import unicodedata
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -76,10 +78,26 @@ def rename_episode_file(episode: Episode, fmt: str):
         .replace("{season_no}", f"{episode.season:02}")
         .replace("{episode_no}", ep)
         .replace("{episode_name}", ep_title)
-        .replace("{ext}", Path(episode.path).suffix)
+        .replace("{ext}", Path(episode.path).suffix.lower())
     )
 
-    return new_filename
+    return slugify(new_filename)
+
+
+def slugify(value, allow_unicode=False):
+    """
+    Convert to ASCII if 'allow_unicode' is False. 
+    Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[\?\*\:\"\|\<\>]', '', value)
+    return value.strip()
 
 
 def log_to_csv(orig_file, renamed_file, csv_file="history.csv"):
