@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import time
 from urllib.parse import quote
 from pathlib import Path
 
@@ -84,17 +85,36 @@ def find_series(search_string, type="series", **kwargs):
 
 
 def get_series_data(series_id):
-    # TODO: if active show, query api if cached file is older than a week
-    if Path(os.path.join(CACHE, f"{series_id}.json")).exists():
-        with open(os.path.join(CACHE, f"{series_id}.json"), "r") as f:
-            data = json.load(f)
-    # otherwise query api
-    else:
-        endpoint = f"/series/{series_id}/episodes/default/eng?page=0"
+    cached_file = os.path.join(CACHE, f"{series_id}.json")
+    
+    # if cached file exists and is less than 7 days old use the cache
+    if Path(cached_file).exists():
+        file_age = time.time() - os.path.getmtime(cached_file)
+        if file_age < 7 * 24 * 60 * 60:
+            with open(os.path.join(CACHE, f"{series_id}.json"), "r") as f:
+                data = json.load(f)
+            return data
+        
+    # query api
+    page = 0
+    series_data = {}
+    # TODO: handle pagination
+    while True:
+        endpoint = f"/series/{series_id}/episodes/default/eng?page={page}"
         data = tvdb_request(URL + endpoint)
-        # save to cache
-        with open(os.path.join(CACHE, f"{series_id}.json"), "w") as f:
-            json.dump(data, f, indent=2)
+
+        if len(data["data"]["episodes"]) > 0:
+            # save to cache
+            if page == 0:
+                series_data = data
+            else:
+                series_data["data"]["episodes"].extend(data["data"]["episodes"])
+        else:
+            break
+        page += 1
+
+    with open(os.path.join(CACHE, f"{series_id}.json"), "w") as f:
+        json.dump(series_data, f, indent=2)
 
     return data
 
