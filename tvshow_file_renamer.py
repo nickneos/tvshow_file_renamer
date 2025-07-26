@@ -15,7 +15,7 @@ DEFAULT_RENAME_FORMAT = (
 )
 
 
-def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
+def rename_tvshow_episodes(tvshow_folder, format, test_run=False, season=0):
     """
     Loops through `tvshow_folder` and renames the video files
     according to `format`
@@ -28,6 +28,10 @@ def rename_tvshow_episodes(tvshow_folder, format, test_run=False):
 
     # loop through each episode video file to be renamed
     for episode in tv_show.episodes:
+        # skip if season does not match
+        if season > 0 and episode.season != season:
+            continue
+
         # get details
         new_filename = rename_episode_file(episode, format)
         testing_tag = "[TEST ONLY] " if test_run else ""
@@ -73,11 +77,11 @@ def rename_episode_file(episode: Episode, fmt: str):
         f"{episode.show_name} ({episode.show_year})/Season {episode.season}/",
     )
     new_filename = new_filename + (
-        fmt.replace("{show_name}", episode.show_name)
+        fmt.replace("{show_name}", episode.show_name.replace("/", "-"))
         .replace("{show_year}", episode.show_year)
         .replace("{season_no}", f"{episode.season:02}")
         .replace("{episode_no}", ep)
-        .replace("{episode_name}", ep_title)
+        .replace("{episode_name}", ep_title.replace("/", "-"))
         .replace("{ext}", Path(episode.path).suffix.lower())
     )
 
@@ -133,6 +137,13 @@ def parse_args():
         help="Full path of TV show directory. Assumes all files under this directory relate to one tv show",
     )
     parser.add_argument(
+        "-s",
+        "--season",
+        default=0,
+        metavar="season_no",
+        help="Only action this season. If not specified, all seasons will be processed",
+    )
+    parser.add_argument(
         "-f",
         "--filename-format",
         default=DEFAULT_RENAME_FORMAT,
@@ -151,4 +162,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    rename_tvshow_episodes(args.directory, args.filename_format, args.test_mode)
+    rename_tvshow_episodes(args.directory, args.filename_format, args.test_mode, int(args.season))
